@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Post;
+use App\Jobs\SendPostNotification; // 🆕 ДОДАЙТЕ ЦЕЙ РЯДОК
 use Illuminate\Support\Str;
 
 class PostObserver
@@ -26,6 +27,14 @@ class PostObserver
         
         if ($post->isDirty('is_published') && $post->is_published && empty($post->published_at)) {
             $post->published_at = now();
+        }
+    }
+
+    // 🆕 НОВИЙ МЕТОД: запускається після створення поста
+    public function created(Post $post): void
+    {
+        if ($post->is_published) {
+            SendPostNotification::dispatch($post);
         }
     }
 }
