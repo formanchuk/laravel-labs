@@ -3,7 +3,10 @@
 namespace App\Observers;
 
 use App\Models\Post;
-use App\Jobs\SendPostNotification; // 🆕 ДОДАЙТЕ ЦЕЙ РЯДОК
+use App\Jobs\SendPostNotification;
+use App\Jobs\ProcessPostContent;
+use App\Jobs\GeneratePostThumbnail;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 
 class PostObserver
@@ -30,11 +33,14 @@ class PostObserver
         }
     }
 
-    // 🆕 НОВИЙ МЕТОД: запускається після створення поста
     public function created(Post $post): void
     {
         if ($post->is_published) {
-            SendPostNotification::dispatch($post);
+            Bus::chain([
+                new SendPostNotification($post),
+                new ProcessPostContent($post),
+                new GeneratePostThumbnail($post),
+            ])->dispatch();
         }
     }
 }
