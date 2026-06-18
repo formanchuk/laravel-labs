@@ -1,83 +1,86 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Repositories\CategoryRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
+    protected $categoryRepository;
+
+    public function __construct(CategoryRepository $categoryRepository)
+    {
+        $this->categoryRepository = $categoryRepository;
+    }
+
     public function index()
     {
-        $categories = [
-            ['id' => 1, 'name' => 'Laravel', 'description' => 'All about Laravel'],
-            ['id' => 2, 'name' => 'PHP', 'description' => 'PHP programming'],
-            ['id' => 3, 'name' => 'JavaScript', 'description' => 'JavaScript and frontend'],
-        ];
+        $categories = $this->categoryRepository->getAll();
+        return view('admin.categories.index', compact('categories'));
+    }
 
-        return view('categories.index', compact('categories'));
+    public function create()
+    {
+        return view('admin.categories.create');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        $this->categoryRepository->create([
+            'name' => $request->name,
+            'slug' => Str::slug($request->name),
+            'description' => $request->description,
+            'is_active' => $request->has('is_active'),
+        ]);
+
+        return redirect()->route('admin.categories.index')
+            ->with('success', 'Категорію створено!');
     }
 
     public function show($id)
     {
-        $categories = [
-            1 => ['id' => 1, 'name' => 'Laravel', 'description' => 'All about Laravel'],
-            2 => ['id' => 2, 'name' => 'PHP', 'description' => 'PHP programming'],
-            3 => ['id' => 3, 'name' => 'JavaScript', 'description' => 'JavaScript and frontend'],
-        ];
-
-        $category = $categories[$id] ?? null;
-
-        if (!$category) {
-            abort(404);
-        }
-
-        return view('categories.show', compact('category'));
+        $category = $this->categoryRepository->findById($id);
+        return view('admin.categories.show', compact('category'));
     }
 
-    // ========== НОВИЙ МЕТОД ДЛЯ ЛАБОРАТОРНОЇ 5 ==========
-    public function collectionExample()
+    public function edit($id)
     {
-        // Отримуємо категорії з бази даних (якщо вони є)
-        $categories = \App\Models\Category::all();
-        
-        // Якщо категорій немає в БД, використовуємо масив
-        if ($categories->isEmpty()) {
-            $categories = collect([
-                ['id' => 1, 'name' => 'Laravel', 'description' => 'All about Laravel', 'is_active' => true],
-                ['id' => 2, 'name' => 'PHP', 'description' => 'PHP programming', 'is_active' => true],
-                ['id' => 3, 'name' => 'JavaScript', 'description' => 'JavaScript and frontend', 'is_active' => false],
-                ['id' => 4, 'name' => 'Vue.js', 'description' => 'Vue.js framework', 'is_active' => true],
-            ]);
-        }
-        
-        // 1. filter - тільки активні категорії
-        $activeCategories = $categories->filter(function ($category) {
-            return $category['is_active'] ?? false;
-        });
-        
-        // 2. map - перетворюємо дані (назви заглавними)
-        $categoryNames = $categories->map(function ($category) {
-            return [
-                'id' => $category['id'],
-                'name' => strtoupper($category['name']),
-                'slug' => isset($category['slug']) ? $category['slug'] : strtolower($category['name']),
-            ];
-        });
-        
-        // 3. pluck - отримуємо тільки назви
-        $names = $categories->pluck('name');
-        
-        // 4. groupBy - групуємо за активністю
-        $grouped = $categories->groupBy(function ($category) {
-            return ($category['is_active'] ?? false) ? 'active' : 'inactive';
-        });
-        
-        return view('categories.collections', compact(
-            'categories',
-            'activeCategories', 
-            'categoryNames', 
-            'names', 
-            'grouped'
-        ));
+        $category = $this->categoryRepository->findById($id);
+        return view('admin.categories.edit', compact('category'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        $this->categoryRepository->update($id, [
+            'name' => $request->name,
+            'slug' => Str::slug($request->name),
+            'description' => $request->description,
+            'is_active' => $request->has('is_active'),
+        ]);
+
+        return redirect()->route('admin.categories.index')
+            ->with('success', 'Категорію оновлено!');
+    }
+
+    public function destroy($id)
+    {
+        $this->categoryRepository->delete($id);
+
+        return redirect()->route('admin.categories.index')
+            ->with('success', 'Категорію видалено!');
     }
 }
