@@ -34,13 +34,12 @@ class PostController extends Controller
 
         Post::create([
             'title' => $request->title,
-            'slug' => Str::slug($request->title),
             'category_id' => $request->category_id,
             'user_id' => auth()->id() ?? 1,
             'content' => $request->content,
             'excerpt' => $request->excerpt,
             'is_published' => $request->has('is_published'),
-            'published_at' => $request->has('is_published') ? now() : null,
+            // 🆕 slug і published_at тепер автоматично додаються через Observer!
         ]);
 
         return redirect()->route('admin.posts.index')
@@ -73,12 +72,11 @@ class PostController extends Controller
         $post = Post::findOrFail($id);
         $post->update([
             'title' => $request->title,
-            'slug' => Str::slug($request->title),
             'category_id' => $request->category_id,
             'content' => $request->content,
             'excerpt' => $request->excerpt,
             'is_published' => $request->has('is_published'),
-            'published_at' => $request->has('is_published') ? now() : null,
+            // 🆕 slug і published_at тепер автоматично оновлюються через Observer!
         ]);
 
         return redirect()->route('admin.posts.index')
