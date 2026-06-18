@@ -19,7 +19,8 @@ Route::get('/posts/{id}', [PostController::class, 'show'])->name('posts.show');
 // 🆕 РОУТ ДЛЯ КОЛЕКЦІЙ (ЛАБОРАТОРНА 5)
 Route::get('/collections', [CategoryController::class, 'collectionExample'])->name('collections');
 
-// 🆕 АДМІНКА КАТЕГОРІЙ (ЛАБОРАТОРНА 4)
+// 🆕 АДМІНКА (ЛАБОРАТОРНА 4, 9)
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class);
+    Route::resource('posts', App\Http\Controllers\Admin\PostController::class); // 🆕 ДЛЯ ЛАБОРАТОРНОЇ 9
 });
